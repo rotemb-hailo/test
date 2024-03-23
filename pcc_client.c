@@ -12,7 +12,7 @@
 int main(int argc, char *argv[]) {
     int total_sent, not_sent, cur_sent, cur_read, message_len;
     int sockfd = -1;
-    uint16_t N, N_for_sending, C;
+    uint32_t N, N_for_sending, C;
     char buffer[1000000]; // buffer with less than 1MB
     FILE *fd;
 
