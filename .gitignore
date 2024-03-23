@@ -1,0 +1,6 @@
+.history/
+.history/*
+.vscode/
+.vscode/*
+
+a.out
