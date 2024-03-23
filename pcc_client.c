@@ -8,13 +8,14 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <stdint.h>
+#include <fcntl.h> // Added for open
 
 int main(int argc, char *argv[]) {
     int total_sent, not_sent, cur_sent, cur_read, message_len;
     int sockfd = -1;
     uint16_t N, N_for_sending, C;
     char buffer[1000000]; // buffer with less than 1MB
-    FILE *fd;
+    int fd;
 
     struct sockaddr_in serv_addr;
 
@@ -26,8 +27,8 @@ int main(int argc, char *argv[]) {
     // We can assume a valid IP address and a 16-bit unsigned integer for the port, so we only check that we can open the file
 
     // Open the file for reading:
-    fd = fopen(argv[3], "r");
-    if (fd == NULL) {
+    fd = open(argv[3], O_RDONLY);
+    if (fd == -1) {
         perror("Failed to open the file. \n");
         exit(1);
     }
@@ -50,13 +51,13 @@ int main(int argc, char *argv[]) {
     }
 
     // Check the file size:
-    if (fseek(fd, 0, SEEK_END) < 0) {
-        perror("fseek Failed. \n");
+    if (lseek(fd, 0, SEEK_END) < 0) {
+        perror("lseek Failed. \n");
         exit(1);
     }
-    N = ftell(fd);
-    if (fseek(fd, 0, SEEK_SET) < 0) {
-        perror("fseek Failed. \n");
+    N = lseek(fd, 0, SEEK_CUR);
+    if (lseek(fd, 0, SEEK_SET) < 0) {
+        perror("lseek Failed. \n");
         exit(1);
     }
     N_for_sending = htons(N);
@@ -84,7 +85,7 @@ int main(int argc, char *argv[]) {
         } else {
             message_len = not_sent;
         }
-        cur_read = fread(buffer, 1, message_len, fd);
+        cur_read = read(fd, buffer, message_len);
         memset(buffer + cur_read, 0, message_len - cur_read);
         cur_sent = write(sockfd, buffer, cur_read);
         if (cur_sent <= 0) {
@@ -94,9 +95,9 @@ int main(int argc, char *argv[]) {
         }
         total_sent += cur_sent;
         not_sent -= cur_sent;
-        fseek(fd, total_sent, SEEK_SET);
+        lseek(fd, total_sent, SEEK_SET);
     }
-    fclose(fd);
+    close(fd);
 
     // Receive C (the number of printable characters)
     total_sent = 0;
