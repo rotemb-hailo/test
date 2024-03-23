@@ -2,5 +2,5 @@
 .history/*
 .vscode/
 .vscode/*
-
-a.out
+bin/
+bin/*

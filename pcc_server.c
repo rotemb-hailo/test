@@ -10,6 +10,8 @@
 #include <signal.h>
 #include <errno.h>
 
+#define TOTAL_PRINTABLE_CHARACTERS 95 // 126 - 32 + 1 = 95
+#define CHARS_TO_SKIP 32
 
 // Function declarations:
 void SIGINT_handler(int signum);
@@ -17,12 +19,12 @@ void SIGINT_handler(int signum);
 void print_statistics();
 
 // Global variables:
-uint32_t pcc_total[95];
-int connfd = -1;
+uint16_t pcc_total[TOTAL_PRINTABLE_CHARACTERS]; 
+int connection_fd = -1;
 int waiting_for_clients = 1;
 
 void SIGINT_handler(int signum) {
-    if (connfd == -1) {
+    if (connection_fd == -1) {
         print_statistics();
     }
     waiting_for_clients = 0;
@@ -30,8 +32,8 @@ void SIGINT_handler(int signum) {
 
 void print_statistics() {
     int i;
-    for (i = 0; i < 95; i++) {
-        printf("char '%c' : %u times\n", (char) (i + 32), pcc_total[i]);
+    for (i = 0; i < TOTAL_PRINTABLE_CHARACTERS; i++) {
+        printf("char '%c' : %hu times\n", (char) (i + CHARS_TO_SKIP), pcc_total[i]);
     }
     exit(0);
 }
@@ -40,11 +42,11 @@ int main(int argc, char *argv[]) {
     int total_sent, not_sent, cur_sent, message_len, i;
     int listenfd = -1;
     const int enable = 1;
-    uint32_t N, C;
+    uint16_t N, C;
     C = 0;
 
     char buffer[1000000]; // buffer with less than 1MB
-    uint32_t temp_pcc_total[95];
+    uint16_t temp_pcc_total[95];
 
     struct sigaction new_sigint_action = {
             .sa_handler = SIGINT_handler,
@@ -90,8 +92,8 @@ int main(int argc, char *argv[]) {
 
     while (waiting_for_clients) {
         // Accept a connection:
-        connfd = accept(listenfd, NULL, NULL);
-        if (connfd < 0) {
+        connection_fd = accept(listenfd, NULL, NULL);
+        if (connection_fd < 0) {
             perror("Accept Failed. \n");
             exit(1);
         }
@@ -100,22 +102,22 @@ int main(int argc, char *argv[]) {
         total_sent = 0;
         not_sent = 4;
         while (not_sent > 0) {
-            cur_sent = read(connfd, (char *) &N + total_sent, not_sent);
+            cur_sent = read(connection_fd, (char *) &N + total_sent, not_sent);
             if (cur_sent == 0 || (cur_sent < 0 && (errno == ETIMEDOUT || errno == ECONNRESET || errno == EPIPE))) {
                 perror("Failed to receive N from the client (EOF, ETIMEDOUT, ECONNRESET, EPIPE). \n");
-                close(connfd);
+                close(connection_fd);
                 not_sent = 0;
-                connfd = -1;
+                connection_fd = -1;
             } else if (cur_sent < 0) {
                 perror("Failed to receive N from the client (Not handled error condition). \n");
-                close(connfd);
+                close(connection_fd);
                 exit(1);
             } else {
                 total_sent += cur_sent;
                 not_sent -= cur_sent;
             }
         }
-        if (connfd == -1) {
+        if (connection_fd == -1) {
             continue;
         }
         N = ntohl(N);
@@ -130,15 +132,15 @@ int main(int argc, char *argv[]) {
             } else {
                 message_len = not_sent;
             }
-            cur_sent = read(connfd, (char *) &buffer, message_len);
+            cur_sent = read(connection_fd, (char *) &buffer, message_len);
             if (cur_sent == 0 || (cur_sent < 0 && (errno == ETIMEDOUT || errno == ECONNRESET || errno == EPIPE))) {
                 perror("Failed to receive the file content from the client (EOF, ETIMEDOUT, ECONNRESET, EPIPE). \n");
-                close(connfd);
+                close(connection_fd);
                 not_sent = 0;
-                connfd = -1;
+                connection_fd = -1;
             } else if (cur_sent < 0) {
                 perror("Failed to receive the file content from the client (Not handled error condition). \n");
-                close(connfd);
+                close(connection_fd);
                 exit(1);
             } else {
                 for (i = 0; i < cur_sent; i++) {
@@ -151,7 +153,7 @@ int main(int argc, char *argv[]) {
                 not_sent -= cur_sent;
             }
         }
-        if (connfd == -1) {
+        if (connection_fd == -1) {
             continue;
         }
         C = htonl(C);
@@ -160,30 +162,30 @@ int main(int argc, char *argv[]) {
         total_sent = 0;
         not_sent = 4;
         while (not_sent > 0) {
-            cur_sent = write(connfd, (char *) &C + total_sent, not_sent);
+            cur_sent = write(connection_fd, (char *) &C + total_sent, not_sent);
             if (cur_sent == 0 || (cur_sent < 0 && (errno == ETIMEDOUT || errno == ECONNRESET || errno == EPIPE))) {
                 perror("Failed to send C to the client (EOF, ETIMEDOUT, ECONNRESET, EPIPE). \n");
-                close(connfd);
+                close(connection_fd);
                 not_sent = 0;
-                connfd = -1;
+                connection_fd = -1;
             } else if (cur_sent < 0) {
                 perror("Failed to send C to the client (Not handled error condition). \n");
-                close(connfd);
+                close(connection_fd);
                 exit(1);
             } else {
                 total_sent += cur_sent;
                 not_sent -= cur_sent;
             }
         }
-        if (connfd == -1) {
+        if (connection_fd == -1) {
             continue;
         }
         for (i = 0; i < 95; i++) {
             pcc_total[i] += temp_pcc_total[i];
             temp_pcc_total[i] = 0;
         }
-        close(connfd);
-        connfd = -1;
+        close(connection_fd);
+        connection_fd = -1;
         C = 0;
     }
     print_statistics();
