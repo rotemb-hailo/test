@@ -1,4 +1,3 @@
-
 // NOTE: This file was based on tcp_client.c and tcp_server.c from rec 10
 
 #include <stdlib.h>
@@ -8,11 +7,12 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <stdint.h>
 
 int main(int argc, char *argv[]) {
     int total_sent, not_sent, cur_sent, cur_read, message_len;
     int sockfd = -1;
-    uint32_t N, N_for_sending, C;
+    uint16_t N, N_for_sending, C;
     char buffer[1000000]; // buffer with less than 1MB
     FILE *fd;
 
@@ -59,11 +59,11 @@ int main(int argc, char *argv[]) {
         perror("fseek Failed. \n");
         exit(1);
     }
-    N_for_sending = htonl(N);
+    N_for_sending = htons(N);
 
     // Send N (the number of bytes that will be transferred):
     total_sent = 0;
-    not_sent = 4;
+    not_sent = sizeof(uint16_t);
     while (not_sent > 0) {
         cur_sent = write(sockfd, (char *) &N_for_sending + total_sent, not_sent);
         if (cur_sent <= 0) {
@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
 
     // Receive C (the number of printable characters)
     total_sent = 0;
-    not_sent = 4;
+    not_sent = sizeof(uint16_t);
     while (not_sent > 0) {
         cur_sent = read(sockfd, (char *) &C + total_sent, not_sent);
         if (cur_sent <= 0) {
@@ -113,7 +113,7 @@ int main(int argc, char *argv[]) {
     }
 
     close(sockfd);
-    C = ntohl(C);
+    C = ntohs(C);
     printf("# of printable characters: %hu\n", C);
     exit(0);
 }

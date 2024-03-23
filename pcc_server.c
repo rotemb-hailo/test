@@ -1,4 +1,3 @@
-
 // NOTE: This file was based on tcp_client.c and tcp_server.c from rec 10
 
 #include <stdlib.h>
@@ -17,7 +16,7 @@ void SIGINT_handler(int signum);
 void print_statistics();
 
 // Global variables:
-uint32_t pcc_total[95];
+uint16_t pcc_total[95];
 int connfd = -1;
 int waiting_for_clients = 1;
 
@@ -40,11 +39,11 @@ int main(int argc, char *argv[]) {
     int total_sent, not_sent, cur_sent, message_len, i;
     int listenfd = -1;
     const int enable = 1;
-    uint32_t N, C;
+    uint16_t N, C;
     C = 0;
 
     char buffer[1000000]; // buffer with less than 1MB
-    uint32_t temp_pcc_total[95];
+    uint16_t temp_pcc_total[95];
     struct sigaction new_sigint_action = {
             .sa_handler = SIGINT_handler,
             .sa_flags = SA_RESTART};
@@ -97,7 +96,7 @@ int main(int argc, char *argv[]) {
 
         // Receive N (the number of bytes that will be transferred):
         total_sent = 0;
-        not_sent = 4;
+        not_sent = sizeof(uint16_t);
         while (not_sent > 0) {
             cur_sent = read(connfd, (char *) &N + total_sent, not_sent);
             if (cur_sent == 0 || (cur_sent < 0 && (errno == ETIMEDOUT || errno == ECONNRESET || errno == EPIPE))) {
@@ -117,7 +116,7 @@ int main(int argc, char *argv[]) {
         if (connfd == -1) {
             continue;
         }
-        N = ntohl(N);
+        N = ntohs(N);
 
         // Receive N bytes (the file content) and calculating statistics:
         memset(temp_pcc_total, 0, sizeof(temp_pcc_total));
@@ -153,11 +152,11 @@ int main(int argc, char *argv[]) {
         if (connfd == -1) {
             continue;
         }
-        C = htonl(C);
+        C = htons(C);
 
         // Send C (the number of printable characters):
         total_sent = 0;
-        not_sent = 4;
+        not_sent = sizeof(uint16_t);
         while (not_sent > 0) {
             cur_sent = write(connfd, (char *) &C + total_sent, not_sent);
             if (cur_sent == 0 || (cur_sent < 0 && (errno == ETIMEDOUT || errno == ECONNRESET || errno == EPIPE))) {
