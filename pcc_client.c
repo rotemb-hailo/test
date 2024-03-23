@@ -12,7 +12,7 @@
 int main(int argc, char *argv[]) {
     int total_sent, not_sent, cur_sent, cur_read, message_len;
     int sockfd = -1;
-    uint32_t N, N_for_sending, C;
+    uint16_t N, N_for_sending, C;
     char buffer[1000000]; // buffer with less than 1MB
     FILE *fd;
 
@@ -114,6 +114,6 @@ int main(int argc, char *argv[]) {
 
     close(sockfd);
     C = ntohl(C);
-    printf("# of printable characters: %u\n", C);
+    printf("# of printable characters: %hu\n", C);
     exit(0);
 }

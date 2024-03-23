@@ -17,7 +17,7 @@ void SIGINT_handler(int signum);
 void print_statistics();
 
 // Global variables:
-uint32_t pcc_total[95];
+uint16_t pcc_total[95];
 int connfd = -1;
 int waiting_for_clients = 1;
 
@@ -31,7 +31,7 @@ void SIGINT_handler(int signum) {
 void print_statistics() {
     int i;
     for (i = 0; i < 95; i++) {
-        printf("char '%c' : %u times\n", (char) (i + 32), pcc_total[i]);
+        printf("char '%c' : %hu times\n", (char) (i + 32), pcc_total[i]);
     }
     exit(0);
 }
@@ -40,11 +40,11 @@ int main(int argc, char *argv[]) {
     int total_sent, not_sent, cur_sent, message_len, i;
     int listenfd = -1;
     const int enable = 1;
-    uint32_t N, C;
+    uint16_t N, C;
     C = 0;
 
     char buffer[1000000]; // buffer with less than 1MB
-    uint32_t temp_pcc_total[95];
+    uint16_t temp_pcc_total[95];
     struct sigaction new_sigint_action = {
             .sa_handler = SIGINT_handler,
             .sa_flags = SA_RESTART};
