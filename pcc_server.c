@@ -9,6 +9,8 @@
 #include <signal.h>
 #include <errno.h>
 
+#define BUFFER_SIZE (1 * 1024 * 1024) // 1MB in bytes
+
 
 // Function declarations:
 void SIGINT_handler(int signum);
@@ -42,7 +44,7 @@ int main(int argc, char *argv[]) {
     uint16_t N, C;
     C = 0;
 
-    char buffer[1000000]; // buffer with less than 1MB
+    char buffer[BUFFER_SIZE]; // buffer with less than 1MB
     uint16_t temp_pcc_total[95];
     struct sigaction new_sigint_action = {
             .sa_handler = SIGINT_handler,
